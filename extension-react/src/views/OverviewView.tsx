@@ -25,7 +25,7 @@ export function OverviewView({
   onSelectAsset,
 }: Props) {
   return (
-    <section className="card">
+    <section className="card overview-card">
       <div className="section-header">
         <div>
           <p className="section-title">Account overview</p>

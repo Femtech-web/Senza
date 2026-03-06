@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, WalletCards, Activity, ShieldCheck, Settings } from "lucide-react";
+import { LayoutDashboard, WalletCards, Activity, ShieldCheck, Settings, Network } from "lucide-react";
 
 export type NavItem = {
   key: string;
@@ -37,6 +37,8 @@ export function DrawerNav({
         return <ShieldCheck size={18} />;
       case "settings":
         return <Settings size={18} />;
+      case "networks":
+        return <Network size={18} />;
       default:
         return null;
     }
@@ -46,12 +48,6 @@ export function DrawerNav({
     <>
       <div className={`nav-overlay ${open ? "show" : ""}`} onClick={onClose} />
       <aside className={`drawer ${open ? "open" : ""}`}>
-        <div className="drawer-header">
-          <button className="icon-button close" onClick={onClose} aria-label="Close navigation">
-            ×
-          </button>
-        </div>
-        <div className="drawer-divider" />
         <div className="nav-list">
           {items.map((item) => (
             <button

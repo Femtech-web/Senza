@@ -31,7 +31,7 @@ export function ActivityPanel({
   onOpenTx: (hash: string) => void;
 }) {
   return (
-    <section className="card">
+    <section className="card activity-card">
       <div className="section-header">
         <div>
           <p className="section-title">Activity</p>

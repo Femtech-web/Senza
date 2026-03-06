@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   PENDING_REQUESTS: "senza_pending_requests",
   CHAIN: "senza_chain_id",
   NETWORK: "senza_network_key",
+  NETWORKS_ENABLED: "senza_networks_enabled",
   RPC: "senza_rpc_network",
 } as const;
 

@@ -52,13 +52,21 @@ body {
 .popup {
   width: 410px;
   min-height: 620px;
+  height: 620px;
   padding: 16px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 .app {
   position: relative;
-  min-height: 588px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
 }
 .app::before {
   content: "";
@@ -262,7 +270,8 @@ body {
   border-radius: 20px;
   padding: 18px;
   display: grid;
-  gap: 16px;
+  grid-template-rows: 1fr auto auto;
+  gap: 12px;
   transform: translateX(120%);
   transition: transform 0.3s ease;
   box-shadow: var(--shadow);
@@ -289,6 +298,9 @@ body {
 .nav-list {
   display: grid;
   gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 .nav-item {
   border: 1px solid var(--border);
@@ -548,7 +560,13 @@ body {
 
 .content {
   display: grid;
+  align-content: start;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 .card {
   width: 100%;
@@ -561,6 +579,21 @@ body {
   display: grid;
   gap: 10px;
   box-shadow: var(--shadow);
+}
+.overview-card {
+  padding: 14px;
+  gap: 8px;
+}
+.activity-card,
+.permissions-card {
+  min-height: 470px;
+}
+.overview-card .asset-list {
+  gap: 7px;
+}
+.overview-card .asset {
+  padding: 10px 12px;
+  border-radius: 14px;
 }
 
 .unlock-card {
@@ -774,6 +807,69 @@ body {
   display: grid;
   gap: 12px;
 }
+.network-list {
+  display: grid;
+  gap: 10px;
+}
+.networks-card {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: 10px;
+}
+.networks-search {
+  margin-top: 2px;
+}
+.networks-body {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 10px;
+  overflow: hidden;
+}
+.networks-body .network-list {
+  overflow: auto;
+  padding-right: 2px;
+}
+.network-row {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #141414;
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 12px;
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.network-row.active {
+  border-color: var(--accent);
+  background: linear-gradient(
+    180deg,
+    rgba(208, 117, 255, 0.2) 0%,
+    rgba(61, 6, 95, 0.65) 100%
+  );
+}
+.network-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(208, 117, 255, 0.22);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.networks-footer {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(16, 16, 16, 0.72), #101010 35%);
+  padding-top: 8px;
+  display: grid;
+  gap: 8px;
+}
 .permission-list {
   display: grid;
   gap: 10px;
@@ -896,14 +992,22 @@ body {
   background: #0a0a0a;
 }
 .connect-approval-sheet {
-  min-height: 100%;
+  height: 100%;
   width: 100%;
-  display: grid;
-  align-content: start;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 16px 14px;
+}
+.connect-approval-body {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 14px;
-  padding: 18px 16px 16px;
-  overflow: auto;
+  overflow: hidden;
+  padding-bottom: 8px;
 }
 .connect-avatar {
   width: 72px;
@@ -929,6 +1033,22 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid #2a2a2a;
+}
+.connect-approval-sheet .permission-card {
+  width: 100%;
+  align-self: stretch;
+}
+.connect-approval-sheet .modal-actions {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  align-self: stretch;
+  position: sticky;
+  bottom: 8px;
+  background: #0a0a0a;
+}
+.connect-approval-sheet .modal-actions .btn {
+  flex: 1;
 }
 .connect-tabs button {
   padding: 10px 6px;

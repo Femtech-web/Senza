@@ -20,9 +20,7 @@ import {
   type TxReview,
   type ReviewImpact,
 } from "./components/TransactionReviewModal";
-import {
-  PermissionsPanel,
-} from "./components/PermissionsPanel";
+import { PermissionsPanel } from "./components/PermissionsPanel";
 import { InternalApprovalModal } from "./components/InternalApprovalModal";
 import { ActivityPanel } from "./components/ActivityPanel";
 import { PendingDrawer } from "./components/PendingDrawer";
@@ -31,6 +29,7 @@ import { useActivityFeed } from "./hooks/useActivityFeed";
 import { OverviewView } from "./views/OverviewView";
 import { AssetsView } from "./views/AssetsView";
 import { SettingsView } from "./views/SettingsView";
+import { NetworksView } from "./views/NetworksView";
 import {
   CreateImportView,
   SetPasswordView,
@@ -38,7 +37,7 @@ import {
 import { WalletUnlockView } from "./views/WalletUnlockView";
 import { WalletManageView } from "./views/WalletManageView";
 import { AddWalletView } from "./views/AddWalletView";
- 
+
 import {
   loadNetworkConfig,
   loadStorage,
@@ -62,7 +61,9 @@ const C_BALANCE_ABI = [
 
 function formatDisplayAmount(value: string, fixedDecimals = 6): string {
   const [whole, fracRaw] = value.split(".");
-  const frac = (fracRaw || "").slice(0, fixedDecimals).padEnd(fixedDecimals, "0");
+  const frac = (fracRaw || "")
+    .slice(0, fixedDecimals)
+    .padEnd(fixedDecimals, "0");
   return `${whole}.${frac}`;
 }
 
@@ -80,6 +81,7 @@ type View =
   | "assets"
   | "activity"
   | "permissions"
+  | "networks"
   | "settings"
   | "add-wallet";
 
@@ -155,21 +157,39 @@ function SenzaPanel() {
   const [networkOpen, setNetworkOpen] = useState(false);
   const [networkKey, setNetworkKey] = useState<NetworkKey>("sepolia");
   const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false);
+  const [enabledNetworks, setEnabledNetworks] = useState<NetworkKey[]>([
+    "sepolia",
+    "mainnet",
+  ]);
+  const [rpcDraftsByNetwork, setRpcDraftsByNetwork] = useState<
+    Record<NetworkKey, string>
+  >({
+    hardhat: NETWORKS_BY_KEY.hardhat.rpcUrl,
+    sepolia: NETWORKS_BY_KEY.sepolia.rpcUrl,
+    mainnet: NETWORKS_BY_KEY.mainnet.rpcUrl,
+  });
+  const [addNetworkCandidate, setAddNetworkCandidate] = useState("hardhat");
   const showPendingBadge = false;
   const [reviewState, setReviewState] = useState<TxReviewState | null>(null);
-  const [internalApproval, setInternalApproval] = useState<InternalApproval | null>(null);
+  const [internalApproval, setInternalApproval] =
+    useState<InternalApproval | null>(null);
   const [internalApprovalBusy, setInternalApprovalBusy] = useState(false);
-  const [pendingAutoDecrypt, setPendingAutoDecrypt] = useState<BalanceState | null>(null);
+  const [pendingAutoDecrypt, setPendingAutoDecrypt] =
+    useState<BalanceState | null>(null);
   const [activityPage, setActivityPage] = useState(0);
   const [resetConfirm, setResetConfirm] = useState(false);
-  const [showDecrypted, setShowDecrypted] = useState<Record<SymbolKey, boolean>>({
+  const [showDecrypted, setShowDecrypted] = useState<
+    Record<SymbolKey, boolean>
+  >({
     USDC: false,
     USDT: false,
   });
-  const [decryptedHandleByKey, setDecryptedHandleByKey] = useState<Record<string, string>>(
-    {}
+  const [decryptedHandleByKey, setDecryptedHandleByKey] = useState<
+    Record<string, string>
+  >({});
+  const [connectTab, setConnectTab] = useState<"accounts" | "permissions">(
+    "accounts"
   );
-  const [connectTab, setConnectTab] = useState<"accounts" | "permissions">("accounts");
   const [connectedDapps, setConnectedDapps] = useState<DappConnection[]>([]);
   const [pendingDapps, setPendingDapps] = useState<DappConnection[]>([]);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
@@ -236,7 +256,9 @@ function SenzaPanel() {
     error: decryptError,
   } = useFHEDecrypt({
     instance,
-    ethersSigner: !isLocked ? (signer as unknown as ethers.JsonRpcSigner) : undefined,
+    ethersSigner: !isLocked
+      ? (signer as unknown as ethers.JsonRpcSigner)
+      : undefined,
     fhevmDecryptionSignatureStorage: decryptStorage,
     chainId,
     requests: decryptRequests,
@@ -252,7 +274,14 @@ function SenzaPanel() {
     if (stored) setCfg(stored);
   };
 
-  const applyNetwork = async (nextKey: NetworkKey) => {
+  const applyNetwork = async (
+    nextKey: NetworkKey,
+    options?: { skipEnabledCheck?: boolean }
+  ) => {
+    if (!options?.skipEnabledCheck && !enabledNetworks.includes(nextKey)) {
+      notify("error", `${nextKey} is not enabled yet`);
+      return;
+    }
     const network = NETWORKS_BY_KEY[nextKey];
     setNetworkKey(nextKey);
     await saveStorage(STORAGE.NETWORK, nextKey);
@@ -263,6 +292,7 @@ function SenzaPanel() {
     const savedRpc = await loadStorage<string>(rpcStorageKey(nextKey));
     const nextRpc = savedRpc || network.rpcUrl;
     setRpcDraft(nextRpc);
+    setRpcDraftsByNetwork((prev) => ({ ...prev, [nextKey]: nextRpc }));
     if (nextRpc && nextRpc !== rpcUrl) {
       await setRpcUrl(nextRpc);
     }
@@ -274,6 +304,7 @@ function SenzaPanel() {
     const numeric = Number.parseInt(chainIdHex, 16);
     const target = NETWORKS.find((net) => net.chainId === numeric);
     if (!target) return false;
+    if (!enabledNetworks.includes(target.key as NetworkKey)) return false;
     await applyNetwork(target.key as NetworkKey);
     return true;
   };
@@ -281,10 +312,38 @@ function SenzaPanel() {
   useEffect(() => {
     if (!ready) return;
     const bootNetwork = async () => {
+      const storedEnabled = await loadStorage<NetworkKey[]>(
+        STORAGE.NETWORKS_ENABLED
+      );
+      const allowed = new Set<NetworkKey>(["hardhat", "sepolia", "mainnet"]);
+      const nextEnabled = (storedEnabled ?? ["sepolia", "mainnet"]).filter((k) =>
+        allowed.has(k)
+      );
+      const safeEnabled =
+        nextEnabled.length > 0 ? nextEnabled : (["sepolia", "mainnet"] as NetworkKey[]);
+      setEnabledNetworks(safeEnabled);
+
+      const rpcValues: Record<NetworkKey, string> = {
+        hardhat:
+          (await loadStorage<string>(rpcStorageKey("hardhat"))) ??
+          NETWORKS_BY_KEY.hardhat.rpcUrl,
+        sepolia:
+          (await loadStorage<string>(rpcStorageKey("sepolia"))) ??
+          NETWORKS_BY_KEY.sepolia.rpcUrl,
+        mainnet:
+          (await loadStorage<string>(rpcStorageKey("mainnet"))) ??
+          NETWORKS_BY_KEY.mainnet.rpcUrl,
+      };
+      setRpcDraftsByNetwork(rpcValues);
+
       const storedKey = await loadStorage<NetworkKey>(STORAGE.NETWORK);
       const nextKey =
-        storedKey && storedKey in NETWORKS_BY_KEY ? storedKey : "sepolia";
-      await applyNetwork(nextKey);
+        storedKey &&
+        storedKey in NETWORKS_BY_KEY &&
+        safeEnabled.includes(storedKey)
+          ? storedKey
+          : safeEnabled[0];
+      await applyNetwork(nextKey, { skipEnabledCheck: true });
     };
     void bootNetwork();
   }, [ready]);
@@ -477,12 +536,12 @@ function SenzaPanel() {
         setEthBalance(formatDisplayAmount(ethers.formatEther(ethRaw), 6));
         const handleString = encryptedBalance ? String(encryptedBalance) : "";
         const nextBalance: BalanceState = {
-            underlying: hasUnderlying
-              ? formatTokenAmountCompact(
-                  ethers.formatUnits(tokenRaw, Number(tokenDecimals)),
-                  6
-                )
-              : "-",
+          underlying: hasUnderlying
+            ? formatTokenAmountCompact(
+                ethers.formatUnits(tokenRaw, Number(tokenDecimals)),
+                6
+              )
+            : "-",
           cHandle:
             handleString && !isZeroHandle(handleString)
               ? handleString
@@ -633,7 +692,13 @@ function SenzaPanel() {
         setShowDecrypted((prev) => ({ ...prev, [selectedAsset]: true }));
       }
     }
-  }, [decryptedResults, decryptRequests, selectedAsset, address, decryptedHandleByKey]);
+  }, [
+    decryptedResults,
+    decryptRequests,
+    selectedAsset,
+    address,
+    decryptedHandleByKey,
+  ]);
 
   useEffect(() => {
     if (internalApproval || !pendingAutoDecrypt) return;
@@ -738,7 +803,10 @@ function SenzaPanel() {
         );
         setTxHash(hash);
         setUnwrapAmount("");
-        notify("success", "Unwrap submitted. Finalization may take a few seconds.");
+        notify(
+          "success",
+          "Unwrap submitted. Finalization may take a few seconds."
+        );
         await refreshBalancesFor(selectedAsset, true);
         if (beforeUnderlying !== null) {
           void waitForUnwrapFinalization(selectedAsset, beforeUnderlying);
@@ -783,10 +851,14 @@ function SenzaPanel() {
     const targetBalance = override ?? activeBalance;
     const quiet = Boolean(override);
     if (!confidentialEnabled) {
-      if (!quiet) notify("error", "Confidential token not configured for this network");
+      if (!quiet)
+        notify("error", "Confidential token not configured for this network");
       return;
     }
-    if (isZeroHandle(targetBalance.cHandle) || targetBalance.cHandle === "Unavailable") {
+    if (
+      isZeroHandle(targetBalance.cHandle) ||
+      targetBalance.cHandle === "Unavailable"
+    ) {
       if (!quiet) notify("error", "No confidential balance to decrypt yet");
       return;
     }
@@ -830,7 +902,12 @@ function SenzaPanel() {
       address,
       tokenConfig,
     });
-    const impact = buildImpact(review, amount, selectedAsset, balancesBySymbol[selectedAsset]);
+    const impact = buildImpact(
+      review,
+      amount,
+      selectedAsset,
+      balancesBySymbol[selectedAsset]
+    );
     setReviewState({ review, fee, impact });
   };
 
@@ -934,6 +1011,18 @@ function SenzaPanel() {
     },
   });
 
+  useEffect(() => {
+    const hasPendingConnect =
+      pendingRequests.some(
+        (req) =>
+          req.method === "eth_requestAccounts" ||
+          req.method === "wallet_requestPermissions"
+      ) || pendingDapps.length > 0;
+    if (!hasPendingConnect) {
+      setConnectTab("accounts");
+    }
+  }, [pendingDapps, pendingRequests]);
+
   if (!ready) {
     return (
       <main className="popup">
@@ -950,36 +1039,33 @@ function SenzaPanel() {
     { key: "assets", label: "Assets" },
     { key: "activity", label: "Activity" },
     { key: "permissions", label: "Permissions" },
+    { key: "networks", label: "Networks" },
     { key: "settings", label: "Settings" },
   ];
+  const availableNetworks = NETWORKS.filter((net) =>
+    enabledNetworks.includes(net.key as NetworkKey)
+  );
 
   const activeBalance = balancesBySymbol[selectedAsset];
   const networkInfo = NETWORKS_BY_KEY[networkKey];
   const confidentialEnabled = isValidAddress(tokenConfig.cToken);
   const fheReady = fheStatus === "ready";
   const activityPageSize = 10;
-  const activityPageCount = Math.ceil(
-    activity.items.length / activityPageSize
-  );
+  const activityPageCount = Math.ceil(activity.items.length / activityPageSize);
   const activityStart = activityPage * activityPageSize;
   const activityItems = activity.items.slice(
     activityStart,
     activityStart + activityPageSize
   );
-  const connectionMethods = new Set(["eth_requestAccounts", "wallet_requestPermissions"]);
+  const connectionMethods = new Set([
+    "eth_requestAccounts",
+    "wallet_requestPermissions",
+  ]);
   const pendingConnectRequest = pendingRequests.find((req) =>
     connectionMethods.has(req.method)
   );
   const pendingConnectOrigin =
     pendingConnectRequest?.origin ?? pendingDapps[0]?.origin ?? null;
-  const latestPendingConnection = pendingDapps[0];
-  const latestPendingRequest = pendingRequests[0];
-
-  useEffect(() => {
-    if (!pendingConnectOrigin) {
-      setConnectTab("accounts");
-    }
-  }, [pendingConnectOrigin]);
 
   return (
     <main className="popup app">
@@ -990,7 +1076,7 @@ function SenzaPanel() {
             chainId={chainId}
             onMenu={() => setIsNavOpen(true)}
             onAccountMenu={() => setAccountMenuOpen((prev) => !prev)}
-            networks={NETWORKS}
+            networks={availableNetworks}
             activeNetworkKey={networkKey}
             networkOpen={networkOpen}
             onToggleNetwork={() => setNetworkOpen((prev) => !prev)}
@@ -1109,19 +1195,112 @@ function SenzaPanel() {
           />
         )}
 
-        {view === "overview" && (
-          <OverviewView
-            address={address}
-            ethBalance={ethBalance}
-            loadingBalances={loadingBalances}
-            balances={balancesBySymbol}
-            selectedAsset={selectedAsset}
-            onRefresh={refreshAllBalances}
-            onSelectAsset={(symbol) => {
-              setSelectedAsset(symbol);
-              setView("assets");
+        {view === "networks" && (
+          <NetworksView
+            networks={availableNetworks.map((net) => ({
+              key: net.key as NetworkKey,
+              label: net.label,
+              chainId: net.chainId,
+            }))}
+            activeNetworkKey={networkKey}
+            rpcDrafts={rpcDraftsByNetwork}
+            addCandidate={addNetworkCandidate}
+            busyAction={busyAction}
+            onSwitch={(key) => {
+              void applyNetwork(key);
+            }}
+            onRpcDraft={(key, value) =>
+              setRpcDraftsByNetwork((prev) => ({ ...prev, [key]: value }))
+            }
+            onSaveRpc={(key) =>
+              runAction(`rpc-${key}`, async () => {
+                const value = (rpcDraftsByNetwork[key] ?? "").trim();
+                if (!value) {
+                  notify("error", "RPC URL is required");
+                  return;
+                }
+                try {
+                  await saveStorage(rpcStorageKey(key), value);
+                  if (networkKey === key) {
+                    await setRpcUrl(value);
+                    setRpcDraft(value);
+                  }
+                  notify("success", `${NETWORKS_BY_KEY[key].shortLabel} RPC updated`);
+                } catch (err) {
+                  notify(
+                    "error",
+                    err instanceof Error ? err.message : "Failed to save RPC"
+                  );
+                }
+              })
+            }
+            onAddCandidate={setAddNetworkCandidate}
+            onAddNetwork={() => {
+              const selected = addNetworkCandidate as NetworkKey | "custom";
+              if (selected === "custom") {
+                notify(
+                  "error",
+                  "Unsupported network. Only Hardhat, Sepolia, and Mainnet are supported."
+                );
+                return;
+              }
+              if (!["hardhat", "sepolia", "mainnet"].includes(selected)) {
+                notify(
+                  "error",
+                  "Unsupported network. Only Hardhat, Sepolia, and Mainnet are supported."
+                );
+                return;
+              }
+              if (enabledNetworks.includes(selected as NetworkKey)) {
+                notify(
+                  "success",
+                  `${NETWORKS_BY_KEY[selected as NetworkKey].shortLabel} is already added`
+                );
+                return;
+              }
+              const next = [...enabledNetworks, selected as NetworkKey];
+              setEnabledNetworks(next);
+              void saveStorage(STORAGE.NETWORKS_ENABLED, next);
+              notify(
+                "success",
+                `${NETWORKS_BY_KEY[selected as NetworkKey].shortLabel} network added`
+              );
             }}
           />
+        )}
+
+        {view === "overview" && (
+          <>
+            <OverviewView
+              address={address}
+              ethBalance={ethBalance}
+              loadingBalances={loadingBalances}
+              balances={balancesBySymbol}
+              selectedAsset={selectedAsset}
+              onRefresh={refreshAllBalances}
+              onSelectAsset={(symbol) => {
+                setSelectedAsset(symbol);
+                setView("assets");
+              }}
+            />
+            <section className="card status-card">
+              <p className="section-title">Status</p>
+              <div className="stats">
+                <div>
+                  <p className="stat-label">FHE</p>
+                  <p className="stat-value">{fheStatus}</p>
+                </div>
+                <div>
+                  <p className="stat-label">Message</p>
+                  <p className="stat-value">{status}</p>
+                </div>
+                <div className="mono">
+                  <p className="stat-label">Last tx</p>
+                  <p className="stat-value">{txHash ? txHash : "-"}</p>
+                </div>
+              </div>
+            </section>
+          </>
         )}
 
         {view === "assets" && (
@@ -1354,76 +1533,6 @@ function SenzaPanel() {
         )}
       </section>
 
-      {showChrome && (
-        <section className="card status-card">
-          <p className="section-title">Status</p>
-          <div className="stats">
-            <div>
-              <p className="stat-label">FHE</p>
-              <p className="stat-value">{fheStatus}</p>
-            </div>
-            <div>
-              <p className="stat-label">Message</p>
-              <p className="stat-value">{status}</p>
-            </div>
-            <div className="mono">
-              <p className="stat-label">Last tx</p>
-              <p className="stat-value">{txHash ? txHash : "-"}</p>
-            </div>
-          </div>
-          {(latestPendingConnection || latestPendingRequest) && (
-            <>
-              <div className="divider" />
-              <p className="section-title">Pending approval</p>
-              {latestPendingConnection && (
-                <div className="permission-card">
-                  <div>
-                    <p className="stat-label">Connection request</p>
-                    <p className="stat-value mono">{latestPendingConnection.origin}</p>
-                  </div>
-                  <div className="row">
-                    <button
-                      className="btn secondary"
-                      onClick={() => void rejectDapp(latestPendingConnection.origin)}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      className="btn"
-                      onClick={() => void approveDapp(latestPendingConnection.origin)}
-                    >
-                      Connect
-                    </button>
-                  </div>
-                </div>
-              )}
-              {latestPendingRequest && (
-                <div className="permission-card">
-                  <div>
-                    <p className="stat-label">{latestPendingRequest.method}</p>
-                    <p className="stat-value mono">{latestPendingRequest.origin}</p>
-                  </div>
-                  <div className="row">
-                    <button
-                      className="btn secondary"
-                      onClick={() => void rejectRequest(latestPendingRequest.id)}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      className="btn"
-                      onClick={() => void approveRequest(latestPendingRequest.id)}
-                    >
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      )}
-
       {reviewState && (
         <TransactionReviewModal
           review={reviewState.review}
@@ -1460,45 +1569,51 @@ function SenzaPanel() {
       {showChrome && pendingConnectOrigin && (
         <section className="connect-approval-overlay">
           <section className="connect-approval-sheet">
-            <div className="connect-avatar">{pendingConnectOrigin[0]?.toUpperCase() ?? "D"}</div>
-            <h3 className="connect-title">{pendingConnectOrigin.replace(/^https?:\/\//, "")}</h3>
-            <p className="note">Connect this website with Senza</p>
-            <div className="connect-tabs">
-              <button
-                className={connectTab === "accounts" ? "active" : ""}
-                onClick={() => setConnectTab("accounts")}
-              >
-                Accounts
-              </button>
-              <button
-                className={connectTab === "permissions" ? "active" : ""}
-                onClick={() => setConnectTab("permissions")}
-              >
-                Permissions
-              </button>
+            <div className="connect-approval-body">
+              <div className="connect-avatar">
+                {pendingConnectOrigin[0]?.toUpperCase() ?? "D"}
+              </div>
+              <h3 className="connect-title">
+                {pendingConnectOrigin.replace(/^https?:\/\//, "")}
+              </h3>
+              <p className="note">Connect this website with Senza</p>
+              <div className="connect-tabs">
+                <button
+                  className={connectTab === "accounts" ? "active" : ""}
+                  onClick={() => setConnectTab("accounts")}
+                >
+                  Accounts
+                </button>
+                <button
+                  className={connectTab === "permissions" ? "active" : ""}
+                  onClick={() => setConnectTab("permissions")}
+                >
+                  Permissions
+                </button>
+              </div>
+              {connectTab === "accounts" ? (
+                <div className="permission-card">
+                  <div>
+                    <p className="stat-label">Selected account</p>
+                    <p className="stat-value mono">{address ?? "-"}</p>
+                  </div>
+                  <div>
+                    <p className="stat-label">Origin</p>
+                    <p className="stat-value mono">{pendingConnectOrigin}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="permission-card">
+                  <div>
+                    <p className="stat-label">Requested permissions</p>
+                    <p className="stat-value">View wallet address</p>
+                  </div>
+                  <div>
+                    <p className="stat-value">Request signature approvals</p>
+                  </div>
+                </div>
+              )}
             </div>
-            {connectTab === "accounts" ? (
-              <div className="permission-card">
-                <div>
-                  <p className="stat-label">Selected account</p>
-                  <p className="stat-value mono">{address ?? "-"}</p>
-                </div>
-                <div>
-                  <p className="stat-label">Origin</p>
-                  <p className="stat-value mono">{pendingConnectOrigin}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="permission-card">
-                <div>
-                  <p className="stat-label">Requested permissions</p>
-                  <p className="stat-value">View wallet address</p>
-                </div>
-                <div>
-                  <p className="stat-value">Request signature approvals</p>
-                </div>
-              </div>
-            )}
             <div className="modal-actions">
               <button
                 className="btn secondary"
