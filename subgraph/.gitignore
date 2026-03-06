@@ -3,3 +3,5 @@ generated
 build
 abis/*.json
 .DS_Store
+data/
+/data
