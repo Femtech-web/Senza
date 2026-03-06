@@ -1,0 +1,24 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "exportedAt": "2026-03-05T12:37:13.721Z",
+  "contracts": {
+    "mockTokens": {
+      "USDC": "0xD5289AEe8aeaC1370683Bd3268f1b93F6c77572D",
+      "USDT": "0x60878aBF4593233b7650723c6839B8AB797476AF"
+    },
+    "confidentialTokens": {
+      "cUSDC": "0x36C0DF9F3a35953FCd1daE7D6166fd265Ee12BEc",
+      "cUSDT": "0x3E9574C5d66821166Fa3F71fd172238B52E036D8"
+    },
+    "officialTokens": {
+      "USDC": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "USDT": "0x93C5d30a7509E60871B77A3548a5BD913334cd35"
+    },
+    "confidentialTokensOfficial": {
+      "cUSDC": "0xbd7793f531643208Dc8117cd7Ed9a4c4B95311E1",
+      "cUSDT": "0xf51fE73BB97340401ae1815A96B3B5C7D501cfA0"
+    },
+    "helper": "0xDb97af3cc33D7806c709A0C2160afE2C06703069"
+  }
+}

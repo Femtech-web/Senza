@@ -1,0 +1,20 @@
+{
+  "name": "senza-subgraph",
+  "version": "0.1.0",
+  "description": "Minimal token activity subgraph for Senza",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --studio senza",
+    "create-local": "graph create --node http://localhost:8020/ senza",
+    "remove-local": "graph remove --node http://localhost:8020/ senza",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 senza"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.71.0",
+    "@graphprotocol/graph-ts": "^0.35.0"
+  },
+  "devDependencies": {
+    "matchstick-as": "^0.6.0"
+  }
+}

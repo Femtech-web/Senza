@@ -1,0 +1,16 @@
+type TokenActivity @entity(immutable: true) {
+  id: ID!
+  actor: Bytes!
+  token: Bytes!
+  activityType: String!
+  counterparty: Bytes
+  encryptedAmount: Bytes
+  clearAmount: BigInt
+  timestamp: BigInt!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+}
+
+type IndexedToken @entity(immutable: true) {
+  id: ID!
+}

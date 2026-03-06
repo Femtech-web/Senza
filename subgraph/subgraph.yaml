@@ -1,0 +1,52 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: ConfidentialUSDC_Official
+    network: sepolia
+    source:
+      address: "0xbd7793f531643208Dc8117cd7Ed9a4c4B95311E1"
+      abi: ConfidentialToken
+      startBlock: 10392959
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenActivity
+      abis:
+        - name: ConfidentialToken
+          file: ./abis/ConfidentialToken.json
+      eventHandlers:
+        - event: ConfidentialTransfer(indexed address,indexed address,indexed bytes32)
+          handler: handleConfidentialTransfer
+        - event: UnwrapRequested(indexed address,bytes32)
+          handler: handleUnwrapRequested
+        - event: UnwrapFinalized(indexed address,bytes32,uint64)
+          handler: handleUnwrapFinalized
+      file: ./src/token.ts
+  - kind: ethereum/contract
+    name: ConfidentialUSDT_Official
+    network: sepolia
+    source:
+      address: "0xf51fE73BB97340401ae1815A96B3B5C7D501cfA0"
+      abi: ConfidentialToken
+      startBlock: 10392959
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenActivity
+      abis:
+        - name: ConfidentialToken
+          file: ./abis/ConfidentialToken.json
+      eventHandlers:
+        - event: ConfidentialTransfer(indexed address,indexed address,indexed bytes32)
+          handler: handleConfidentialTransfer
+        - event: UnwrapRequested(indexed address,bytes32)
+          handler: handleUnwrapRequested
+        - event: UnwrapFinalized(indexed address,bytes32,uint64)
+          handler: handleUnwrapFinalized
+      file: ./src/token.ts
