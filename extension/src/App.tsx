@@ -869,7 +869,7 @@ function SenzaPanel() {
     const handle = targetBalance.cHandle;
     setInternalApproval({
       id: `internal-${Date.now()}`,
-      origin: "Senza Wallet",
+      origin: "Senza",
       title: `Decrypt c${selectedAsset} balance`,
       method: "userDecrypt",
       details: [
@@ -919,7 +919,7 @@ function SenzaPanel() {
   }) => {
     setInternalApproval({
       id: `internal-${Date.now()}`,
-      origin: "Senza Wallet",
+      origin: "Senza",
       title: input.title,
       method: input.method,
       details: input.details,

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Senza Wallet",
+  "name": "Senza",
   "description": "Confidential token wallet extension built with React + Vite.",
   "version": "0.2.0",
   "icons": {

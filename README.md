@@ -293,10 +293,26 @@ From `hardhat/`:
 npm test
 ```
 
-Current suites:
+Contract test suites:
 
 - `test/ConfidentialWrappers.test.ts`
 - `test/SenzaWalletHelper.test.ts`
+
+### Contract Test Coverage
+
+`ConfidentialWrappers.test.ts` covers:
+
+- wrapper deployment metadata and underlying token wiring
+- successful `wrap` flow from underlying token to confidential balance
+- confidential transfer execution with encrypted input
+- unwrap request flow and expected `UnwrapRequested` event emission
+
+`SenzaWalletHelper.test.ts` covers:
+
+- favorite token update success path for ERC-7984-compatible token
+- event emission validation for favorite updates
+- revert behavior for invalid token address (`InvalidToken`)
+- revert behavior for non-ERC-7984 token (`UnsupportedToken`)
 
 ---
 
