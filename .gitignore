@@ -8,3 +8,15 @@ packages/*/.env
 packages/*/.turbo
 packages/*/coverage
 tmp*
+
+# Senza generated artifacts
+extension-react/dist/
+extension-react/node_modules/
+hardhat/node_modules/
+hardhat/artifacts/
+hardhat/cache/
+hardhat/typechain-types/
+subgraph/node_modules/
+subgraph/generated/
+subgraph/build/
+subgraph/data/
