@@ -8,6 +8,13 @@ Senza is a Chrome extension wallet that combines familiar Ethereum wallet behavi
 > Senza is still pending Chrome Web Store approval.
 > To test it right now, use the local unpacked-extension flow in [Chrome Extension Status](#chrome-extension-status).
 
+## Demo Video
+
+[![Watch the Senza demo](https://img.youtube.com/vi/ZihMXiNSEdk/hqdefault.jpg)](https://youtu.be/ZihMXiNSEdk)
+
+Watch the Senza demo:
+https://youtu.be/ZihMXiNSEdk
+
 ---
 
 ## Table of Contents
@@ -365,7 +372,7 @@ Contract test suites:
 
 Defined in:
 
-- `extension-react/src/config/tokens.ts`
+- `extension/src/config/tokens.ts`
 
 Supported networks in-wallet:
 
