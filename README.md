@@ -4,6 +4,10 @@
 
 Senza is a Chrome extension wallet that combines familiar Ethereum wallet behavior with confidential token workflows (`cUSDC`, `cUSDT`): wrap, unwrap, confidential send, and decrypt-on-demand balances.
 
+> `Note`
+> Senza is still pending Chrome Web Store approval.
+> To test it right now, use the local unpacked-extension flow in [Chrome Extension Status](#chrome-extension-status).
+
 ---
 
 ## Table of Contents
@@ -15,6 +19,7 @@ Senza is a Chrome extension wallet that combines familiar Ethereum wallet behavi
 - [Architecture](#architecture)
 - [Security Model](#security-model)
 - [Repository Structure](#repository-structure)
+- [Chrome Extension Status](#chrome-extension-status)
 - [Quick Start](#quick-start)
 - [Deployment](#deployment)
 - [Testing](#testing)
@@ -107,13 +112,13 @@ Senza currently implements or integrates with:
 
 ```text
 Senza/
-├── extension-react/      # Chrome extension (React + Vite, popup + provider bridge)
+├── extension/            # Chrome extension (React + Vite, popup + provider bridge)
 ├── hardhat/              # Contracts, deploy scripts, tests, deployment export
 ├── subgraph/             # Token activity indexing (The Graph)
 └── docs/                 # Supplemental docs
 ```
 
-### Extension layer (`extension-react`)
+### Extension layer (`extension`)
 
 - UI: popup wallet app.
 - Wallet engine: encrypted vault + account/session handling.
@@ -168,7 +173,7 @@ Senza/
 │   ├── ARCHITECTURE.md
 │   ├── FEATURE_MATRIX.md
 │   └── SECURITY_MODEL.md
-├── extension-react/
+├── extension/
 │   ├── src/
 │   ├── public/
 │   └── dist/
@@ -182,6 +187,44 @@ Senza/
     ├── schema.graphql
     └── subgraph.yaml
 ```
+
+---
+
+## Chrome Extension Status
+
+Senza is not yet approved on the Chrome Web Store.
+
+For now, the correct way to test it is as a locally built unpacked extension in Chrome.
+
+### Test locally in Chrome
+
+1. Build the extension bundle:
+
+```bash
+cd extension
+npm install
+npm run build
+```
+
+2. Open Chrome and go to:
+
+```text
+chrome://extensions
+```
+
+3. Turn on `Developer mode` in the top-right corner.
+
+4. Click `Load unpacked`.
+
+5. Select this folder:
+
+```text
+Senza/extension/dist
+```
+
+6. Pin the extension if needed, open Senza, create or import a wallet, and connect it to your target dApp.
+
+7. Whenever you make changes locally, rebuild and then click `Reload` on the Senza extension card in `chrome://extensions`, then refresh the dApp tab.
 
 ---
 
@@ -219,7 +262,7 @@ npm run export:deployments
 ### 2) Extension
 
 ```bash
-cd extension-react
+cd extension
 npm install
 npm run build
 ```
@@ -229,7 +272,7 @@ Load extension:
 1. Open `chrome://extensions`
 2. Enable `Developer mode`
 3. Click `Load unpacked`
-4. Select `Senza/extension-react/dist`
+4. Select `Senza/extension/dist`
 
 ### 3) (Optional) Local subgraph
 
@@ -247,7 +290,7 @@ By default, extension subgraph URL is:
 
 - `http://localhost:8000/subgraphs/name/senza`
 
-Override with `extension-react/.env`:
+Override with `extension/.env`:
 
 ```env
 VITE_SUBGRAPH_URL=http://localhost:8000/subgraphs/name/senza

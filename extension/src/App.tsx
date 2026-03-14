@@ -22,6 +22,7 @@ import {
 } from "./components/TransactionReviewModal";
 import { PermissionsPanel } from "./components/PermissionsPanel";
 import { InternalApprovalModal } from "./components/InternalApprovalModal";
+import { DappRequestModal } from "./components/DappRequestModal";
 import { ActivityPanel } from "./components/ActivityPanel";
 import { PendingDrawer } from "./components/PendingDrawer";
 import { AccountMenu } from "./components/AccountMenu";
@@ -174,6 +175,7 @@ function SenzaPanel() {
   const [internalApproval, setInternalApproval] =
     useState<InternalApproval | null>(null);
   const [internalApprovalBusy, setInternalApprovalBusy] = useState(false);
+  const [pendingRequestBusy, setPendingRequestBusy] = useState(false);
   const [pendingAutoDecrypt, setPendingAutoDecrypt] =
     useState<BalanceState | null>(null);
   const [activityPage, setActivityPage] = useState(0);
@@ -1066,6 +1068,9 @@ function SenzaPanel() {
   );
   const pendingConnectOrigin =
     pendingConnectRequest?.origin ?? pendingDapps[0]?.origin ?? null;
+  const pendingActionRequest = pendingRequests.find(
+    (req) => !connectionMethods.has(req.method)
+  );
 
   return (
     <main className="popup app">
@@ -1562,6 +1567,29 @@ function SenzaPanel() {
               setInternalApprovalBusy(false);
               setInternalApproval(null);
             }
+          }}
+        />
+      )}
+
+      {showChrome && pendingActionRequest && !pendingConnectOrigin && (
+        <DappRequestModal
+          request={pendingActionRequest}
+          chainId={chainId}
+          busy={pendingRequestBusy}
+          onReject={() => {
+            if (pendingRequestBusy) return;
+            void rejectRequest(pendingActionRequest.id);
+          }}
+          onApprove={() => {
+            if (pendingRequestBusy) return;
+            void (async () => {
+              setPendingRequestBusy(true);
+              try {
+                await approveRequest(pendingActionRequest.id);
+              } finally {
+                setPendingRequestBusy(false);
+              }
+            })();
           }}
         />
       )}

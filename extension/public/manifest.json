@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Senza",
-  "description": "Confidential token wallet extension built with React + Vite.",
-  "version": "0.2.0",
+  "description": "Confidential Ethereum wallet for private token balances, transfers, and dApp connections, built on Zama.",
+  "version": "0.1.0",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

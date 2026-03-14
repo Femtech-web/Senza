@@ -4,6 +4,13 @@ const STORAGE = {
   PENDING: "senza_pending_dapps",
   PENDING_REQUESTS: "senza_pending_requests",
   CHAIN: "senza_chain_id",
+  RPC: "senza_rpc_url",
+};
+
+const DEFAULT_RPC_BY_CHAIN = {
+  "0x7a69": "http://127.0.0.1:8545",
+  "0xaa36a7": "https://ethereum-sepolia-rpc.publicnode.com",
+  "0x1": "https://ethereum.publicnode.com",
 };
 
 const pendingResponses = new Map();
@@ -76,6 +83,76 @@ const writeStorage = async (key, value) => {
     return;
   }
   await chrome.storage.local.set({ [key]: value });
+};
+
+const getRpcUrl = async (chainId) => {
+  const saved = await readStorage(STORAGE.RPC);
+  if (typeof saved === "string" && saved.trim()) return saved.trim();
+  return DEFAULT_RPC_BY_CHAIN[chainId] || DEFAULT_RPC_BY_CHAIN["0xaa36a7"];
+};
+
+const proxyJsonRpc = async (method, params, chainId) => {
+  const rpcUrl = await getRpcUrl(chainId);
+  let response;
+
+  try {
+    response = await fetch(rpcUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: Date.now(),
+        method,
+        params: params ?? [],
+      }),
+    });
+  } catch (err) {
+    throw {
+      code: 4900,
+      message: `RPC request failed for ${method}: ${err?.message || "Network error"}`,
+    };
+  }
+
+  if (!response.ok) {
+    throw {
+      code: 4900,
+      message: `RPC endpoint responded with HTTP ${response.status} for ${method}`,
+    };
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (err) {
+    throw {
+      code: 4900,
+      message: `RPC endpoint returned invalid JSON for ${method}`,
+    };
+  }
+
+  if (payload?.error) {
+    throw {
+      code: payload.error.code ?? 4900,
+      message: payload.error.message ?? `RPC error for ${method}`,
+      data: payload.error.data,
+    };
+  }
+
+  return payload?.result;
+};
+
+const shouldProxyJsonRpc = (method) => {
+  if (typeof method !== "string" || !method) return false;
+  if (method === "eth_subscribe" || method === "eth_unsubscribe") return false;
+  if (method.startsWith("wallet_")) return false;
+  return (
+    method.startsWith("eth_") ||
+    method.startsWith("net_") ||
+    method.startsWith("web3_") ||
+    method.startsWith("personal_")
+  );
 };
 
 const getAccounts = async () => {
@@ -166,6 +243,9 @@ const handleRequest = async (id, payload, sender) => {
       });
     }
     default:
+      if (shouldProxyJsonRpc(method)) {
+        return await proxyJsonRpc(method, params, chainId);
+      }
       throw { code: 4200, message: `Unsupported method ${method}` };
   }
 };

@@ -72,6 +72,19 @@ export const createProviderBridge = (params: {
     return String(value ?? "");
   };
 
+  const normalizeTypedDataForSigning = (typedData: Record<string, any>) => {
+    const nextTypes = { ...(typedData.types ?? {}) };
+    if ("EIP712Domain" in nextTypes) {
+      delete nextTypes.EIP712Domain;
+    }
+
+    return {
+      domain: typedData.domain ?? {},
+      types: nextTypes,
+      message: typedData.message ?? {},
+    };
+  };
+
   const resolveRequest = async (
     id: string,
     result?: unknown,
@@ -247,7 +260,8 @@ export const createProviderBridge = (params: {
         return;
       }
       if (req.method === "eth_signTypedData_v4") {
-        const typedData = JSON.parse(((req.params as any)?.[1] ?? "{}") as string);
+        const typedDataRaw = JSON.parse(((req.params as any)?.[1] ?? "{}") as string);
+        const typedData = normalizeTypedDataForSigning(typedDataRaw);
         const signature = await signer.signTypedData(
           typedData.domain,
           typedData.types,
@@ -258,8 +272,9 @@ export const createProviderBridge = (params: {
       }
       if (req.method === "eth_signTypedData" || req.method === "eth_signTypedData_v3") {
         const typedDataRaw = (req.params as any)?.[1] ?? "{}";
-        const typedData =
+        const typedDataParsed =
           typeof typedDataRaw === "string" ? JSON.parse(typedDataRaw) : typedDataRaw;
+        const typedData = normalizeTypedDataForSigning(typedDataParsed);
         const signature = await signer.signTypedData(
           typedData.domain,
           typedData.types,

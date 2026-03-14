@@ -955,13 +955,16 @@ body {
 }
 .modal {
   width: min(360px, 90vw);
+  max-height: min(680px, calc(100vh - 24px));
   background: #141414;
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: var(--shadow);
   padding: 16px;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 12px;
+  overflow: hidden;
 }
 
 .approval-modal .approval-card {
@@ -1072,6 +1075,14 @@ body {
 .modal-body {
   display: grid;
   gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.typed-block {
+  display: grid;
+  gap: 10px;
 }
 .review-row {
   display: flex;
@@ -1098,6 +1109,8 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 .modal-progress {
   display: flex;
