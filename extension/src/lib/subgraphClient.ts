@@ -1,7 +1,7 @@
 import { GraphQLClient } from "graphql-request";
 
 const DEFAULT_SUBGRAPH_URL =
-  "http://localhost:8000/subgraphs/name/senza";
+  " https://api.studio.thegraph.com/query/1744337/senza/v0.0.1";
 
 export const SUBGRAPH_URL =
   (import.meta as { env?: { VITE_SUBGRAPH_URL?: string } }).env?.VITE_SUBGRAPH_URL ||
