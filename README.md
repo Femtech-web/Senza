@@ -4,10 +4,6 @@
 
 Senza is a Chrome extension wallet that combines familiar Ethereum wallet behavior with confidential token workflows (`cUSDC`, `cUSDT`): wrap, unwrap, confidential send, and decrypt-on-demand balances.
 
-> `Note`
-> Senza is still pending Chrome Web Store approval.
-> To test it right now, use the local unpacked-extension flow in [Chrome Extension Status](#chrome-extension-status).
-
 ## Demo Video
 
 [![Watch the Senza demo](https://img.youtube.com/vi/ZihMXiNSEdk/hqdefault.jpg)](https://youtu.be/ZihMXiNSEdk)
@@ -26,7 +22,6 @@ https://youtu.be/ZihMXiNSEdk
 - [Architecture](#architecture)
 - [Security Model](#security-model)
 - [Repository Structure](#repository-structure)
-- [Chrome Extension Status](#chrome-extension-status)
 - [Quick Start](#quick-start)
 - [Deployment](#deployment)
 - [Testing](#testing)
@@ -196,12 +191,6 @@ Senza/
 ```
 
 ---
-
-## Chrome Extension Status
-
-Senza is not yet approved on the Chrome Web Store.
-
-For now, the correct way to test it is as a locally built unpacked extension in Chrome.
 
 ### Test locally in Chrome
 
